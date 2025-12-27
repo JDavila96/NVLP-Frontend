@@ -46,6 +46,24 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
     };
   }, []);
 
+  // Apply dark mode class to document root for Tailwind CSS
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  // Apply reduce-motion class to document root
+  useEffect(() => {
+    if (reduceAnimations) {
+      document.documentElement.classList.add('reduce-motion');
+    } else {
+      document.documentElement.classList.remove('reduce-motion');
+    }
+  }, [reduceAnimations]);
+
   // Initialize sensory preferences when user data is loaded
   useEffect(() => {
     if (user?.preferences) {
@@ -80,6 +98,10 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
       timeoutIdsRef.current.forEach(clearTimeout);
       timeoutIdsRef.current = [];
       pendingRequestsRef.current = 0;
+      
+      // Ensure dark mode and reduce motion classes are removed on logout
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove('reduce-motion');
     }
   }, [user]);
 

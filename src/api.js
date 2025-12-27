@@ -12,7 +12,7 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 5000, // 5 second timeout (reduced for faster failure detection)
 });
 
 // Request interceptor: automatically attach Authorization header if token exists
@@ -41,6 +41,17 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Handle timeout errors specifically
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      console.error('⏱️ Request timeout:', error);
+      const timeoutError = {
+        message: 'Request timeout. Please check your connection.',
+        status: 0,
+        data: null,
+      };
+      return Promise.reject(timeoutError);
+    }
+
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -49,32 +60,39 @@ axiosInstance.interceptors.response.use(
       
       if (refreshToken) {
         try {
-          // Attempt to refresh the access token
+          console.log('🔄 Attempting token refresh...');
+          // Attempt to refresh the access token with a timeout
           const response = await axios.post(`${BASE_URL}/auth/token/refresh/`, {
             refresh: refreshToken,
-          });
+          }, { timeout: 5000 });
 
           const newAccessToken = response.data.access;
           
           // Store new access token
           localStorage.setItem(TOKEN_KEY, newAccessToken);
+          console.log('✅ Token refreshed successfully');
 
           // Update authorization header and retry original request
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return axiosInstance(originalRequest);
         } catch (refreshError) {
           // Token refresh failed - clear tokens and logout
-          console.error('Token refresh failed:', refreshError);
+          console.error('❌ Token refresh failed:', refreshError);
           localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem(REFRESH_TOKEN_KEY);
           
-          // Redirect to login or trigger logout
-          window.location.href = '/';
-          
-          return Promise.reject(refreshError);
+          // Don't redirect here - let the app handle it
+          // This prevents the interceptor from hanging the UI
+          const authError = {
+            message: 'Authentication failed. Please login again.',
+            status: 401,
+            data: null,
+          };
+          return Promise.reject(authError);
         }
       } else {
         // No refresh token available - clear access token
+        console.warn('⚠️ No refresh token available');
         localStorage.removeItem(TOKEN_KEY);
       }
     }

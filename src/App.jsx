@@ -64,7 +64,7 @@ const useMockDataIfNeeded = (data, type) => {
 // Login Form Component with React Hook Form
 const LoginForm = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { darkMode } = useSensory();
+  // Dark mode is now applied at the document level via SensoryContext
 
   const {
     register,
@@ -135,8 +135,7 @@ const LoginForm = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className={`${darkMode ? 'dark' : ''}`}>
-      <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-6 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-6 transition-colors duration-300">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md transition-colors duration-300">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2 text-center transition-colors duration-300">
             NVLP
@@ -220,7 +219,6 @@ const LoginForm = ({ onLoginSuccess }) => {
           </form>
         </div>
       </div>
-    </div>
   );
 };
 
@@ -249,7 +247,26 @@ function App() {
   // Check authentication and fetch data on mount
   useEffect(() => {
     const initializeApp = async () => {
+      console.log('🔄 Initializing app...');
+      
+      // Safety timeout to prevent infinite loading (10 seconds)
+      const safetyTimeout = setTimeout(() => {
+        console.error('⏱️ Initialization timeout - forcing exit from loading screen');
+        if (isMountedRef.current) {
+          setIsInitializing(false);
+          setIsLoadingUser(false);
+          setIsLoadingCourses(false);
+          setIsAuthenticated(false);
+          api.logout();
+          toast.error('Failed to load. Please login again.', {
+            position: 'top-center',
+            duration: 4000,
+          });
+        }
+      }, 10000); // 10 second safety timeout
+      
       if (api.isAuthenticated()) {
+        console.log('✅ Token found, fetching user data...');
         try {
           setIsLoadingUser(true);
           setIsLoadingCourses(true);
@@ -260,6 +277,8 @@ function App() {
             api.getCourses(),
           ]);
 
+          console.log('📥 Data received:', { userProfileRaw, coursesDataRaw });
+
           // Use mock data fallback if backend returns URLs instead of real data
           const userProfile = useMockDataIfNeeded(userProfileRaw, 'profile');
           const coursesData = useMockDataIfNeeded(coursesDataRaw, 'courses');
@@ -268,28 +287,38 @@ function App() {
             setUser(userProfile);
             setCourses(coursesData);
             setIsAuthenticated(true);
+            console.log('✅ Initialization complete');
           }
         } catch (err) {
-          console.error('Failed to fetch data:', err);
+          console.error('❌ Failed to fetch data:', err);
           if (isMountedRef.current) {
             setError(err.message);
             setIsAuthenticated(false);
             
-            // Show error toast
-            toast.error(err.message || 'Failed to load your data', {
+            // Show error toast - session likely expired
+            toast.error('Session expired. Please login again.', {
               position: 'top-center',
               duration: 4000,
             });
           }
+          // Clear invalid tokens
           api.logout();
         } finally {
+          // Clear the safety timeout since we completed (successfully or with error)
+          clearTimeout(safetyTimeout);
+          
           if (isMountedRef.current) {
             setIsLoadingUser(false);
             setIsLoadingCourses(false);
             setIsInitializing(false);
+            console.log('🏁 Initialization finished (loading states reset)');
           }
         }
       } else {
+        // Clear the safety timeout since we're showing login immediately
+        clearTimeout(safetyTimeout);
+        
+        console.log('ℹ️ No token found, showing login screen');
         if (isMountedRef.current) {
           setIsInitializing(false);
         }
@@ -358,35 +387,31 @@ function App() {
 
 // App Content with Sensory Context
 const AppContent = ({ user, courses, isLoadingUser, isLoadingCourses, onLogout }) => {
-  const { darkMode, reduceAnimations } = useSensory();
+  // Dark mode and reduce animations are now applied at the document level via SensoryContext
   
   return (
     <>
       <Toaster />
-      <div className={`${darkMode ? 'dark' : ''} ${reduceAnimations ? 'reduce-motion' : ''}`}>
-        <StudentDashboard 
-          user={user} 
-          courses={courses}
-          isLoadingUser={isLoadingUser}
-          isLoadingCourses={isLoadingCourses}
-          onLogout={onLogout}
-        />
-      </div>
+      <StudentDashboard 
+        user={user} 
+        courses={courses}
+        isLoadingUser={isLoadingUser}
+        isLoadingCourses={isLoadingCourses}
+        onLogout={onLogout}
+      />
     </>
   );
 };
 
 // Initializing Screen Component
 const InitializingScreen = () => {
-  const { darkMode, reduceAnimations } = useSensory();
+  // Dark mode and reduce animations are now applied at the document level via SensoryContext
   
   return (
-    <div className={`${darkMode ? 'dark' : ''} ${reduceAnimations ? 'reduce-motion' : ''}`}>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center transition-colors duration-300">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">Loading...</p>
-        </div>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center transition-colors duration-300">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
+        <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">Loading...</p>
       </div>
     </div>
   );
