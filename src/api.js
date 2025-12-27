@@ -151,6 +151,46 @@ export const api = {
     return response.data;
   },
 
+  // Task Breaker (Executive Function Toolkit)
+  // Get all tasks for the authenticated user
+  getTasks: async () => {
+    const response = await axiosInstance.get('/ef/tasks/');
+    return response.data;
+  },
+
+  // Create a new task with steps
+  createTask: async (taskData) => {
+    // taskData shape: { main_task_title: string, steps: [{ step_description: string, order: number }] }
+    const response = await axiosInstance.post('/ef/tasks/', taskData);
+    return response.data;
+  },
+
+  // Update an entire task (including steps)
+  updateTask: async (taskId, taskData) => {
+    const response = await axiosInstance.put(`/ef/tasks/${taskId}/`, taskData);
+    return response.data;
+  },
+
+  // Partially update a task (e.g., mark as complete)
+  patchTask: async (taskId, partialData) => {
+    const response = await axiosInstance.patch(`/ef/tasks/${taskId}/`, partialData);
+    return response.data;
+  },
+
+  // Delete a task
+  deleteTask: async (taskId) => {
+    const response = await axiosInstance.delete(`/ef/tasks/${taskId}/`);
+    return response.data;
+  },
+
+  // Update a specific step's completion status (uses custom backend endpoint)
+  updateTaskStep: async (taskId, stepId, isComplete) => {
+    const response = await axiosInstance.patch(`/ef/tasks/${taskId}/update_step/${stepId}/`, {
+      is_step_complete: isComplete
+    });
+    return response.data;
+  },
+
   // Check if user is authenticated
   isAuthenticated: () => {
     return !!localStorage.getItem(TOKEN_KEY);

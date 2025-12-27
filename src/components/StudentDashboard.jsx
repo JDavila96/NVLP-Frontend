@@ -3,6 +3,7 @@ import { Sparkles, Moon, Volume2, Film, Loader2, Check, AlertCircle, Lightbulb, 
 import { useSensory } from '../context/SensoryContext';
 import { ProfileSummarySkeleton, CourseListSkeleton } from './Skeleton';
 import SmartText from './SmartText';
+import TaskBreaker from './TaskBreaker';
 
 // --- COMPONENT 1: SENSORY PANEL (Refactored - Stateless with Context) ---
 const SensoryPanel = () => {
@@ -333,6 +334,10 @@ const StudentDashboard = ({
         {/* MAIN CONTENT */}
         <div className="lg:col-span-3 flex flex-col gap-6">
            <LearningPath courses={courses} isLoading={isLoadingCourses} />
+           
+           {/* Task Breaker - Executive Function Toolkit */}
+           <TaskBreaker />
+           
            <div className="bg-blue-600 dark:bg-blue-700 text-white p-6 rounded-xl shadow-lg flex items-center justify-between transition-colors duration-300">
               <div>
                 <h2 className="text-xl font-bold"><SmartText>Ready to learn?</SmartText></h2>
