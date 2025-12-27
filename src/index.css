@@ -26,3 +26,28 @@
     transition: none !important;
   }
 }
+
+/* Dyslexic Font Support - Phase 3 Smart Tags */
+.font-dyslexic,
+.font-dyslexic * {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+}
+
+/* Font Size Utilities - Phase 3 Smart Tags */
+.font-small {
+  font-size: 87.5%; /* 14px base */
+}
+
+.font-medium {
+  font-size: 100%; /* 16px base - default */
+}
+
+.font-large {
+  font-size: 112.5%; /* 18px base */
+}
+
+/* Bionic Reading - stronger emphasis */
+.bionic-text strong {
+  font-weight: 700;
+  color: inherit;
+}

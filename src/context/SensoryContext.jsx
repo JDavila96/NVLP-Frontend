@@ -18,6 +18,11 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
   const [lowAudio, setLowAudio] = useState(false);
   const [reduceAnimations, setReduceAnimations] = useState(false);
   
+  // Smart Tags preferences (Phase 3)
+  const [dyslexicFont, setDyslexicFont] = useState(false);
+  const [bionicReading, setBionicReading] = useState(false);
+  const [fontSize, setFontSize] = useState('medium'); // 'small' | 'medium' | 'large'
+  
   // Saving status for user feedback
   const [savingStatus, setSavingStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
   
@@ -36,7 +41,38 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
     dark_mode: false,
     low_audio: false,
     reduce_animations: false,
+    dyslexic_font: false,
+    bionic_reading: false,
+    font_size: 'medium',
   });
+  
+  // Smart Tag function for Bionic Reading
+  const smartTag = (text) => {
+    if (!bionicReading || !text) return text;
+    
+    // Split text into words
+    const words = text.split(' ');
+    
+    return words.map((word, index) => {
+      if (word.length <= 2) {
+        // Short words - don't bold
+        return word + (index < words.length - 1 ? ' ' : '');
+      }
+      
+      // Calculate how many characters to bold (first half)
+      const boldLength = Math.ceil(word.length / 2);
+      const boldPart = word.slice(0, boldLength);
+      const normalPart = word.slice(boldLength);
+      
+      return (
+        <React.Fragment key={index}>
+          <strong>{boldPart}</strong>
+          {normalPart}
+          {index < words.length - 1 ? ' ' : ''}
+        </React.Fragment>
+      );
+    });
+  };
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -69,6 +105,70 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
       console.log('✅ Removed "reduce-motion" class from document');
     }
   }, [reduceAnimations]);
+  
+  // Apply dyslexic font class to document root
+  useEffect(() => {
+    console.log('🔤 Dyslexic font state changed:', dyslexicFont);
+    if (dyslexicFont) {
+      document.documentElement.classList.add('font-dyslexic');
+      console.log('✅ Added "font-dyslexic" class to document');
+    } else {
+      document.documentElement.classList.remove('font-dyslexic');
+      console.log('✅ Removed "font-dyslexic" class from document');
+    }
+  }, [dyslexicFont]);
+  
+  // Apply font size class to document root
+  useEffect(() => {
+    console.log('📏 Font size state changed:', fontSize);
+    // Remove all font size classes
+    document.documentElement.classList.remove('font-small', 'font-medium', 'font-large');
+    // Add the current font size class
+    document.documentElement.classList.add(`font-${fontSize}`);
+    console.log(`✅ Applied "font-${fontSize}" class to document`);
+  }, [fontSize]);
+  
+  // Volume Controller - Control all audio/video elements based on lowAudio
+  useEffect(() => {
+    console.log('🔊 Low audio state changed:', lowAudio);
+    const targetVolume = lowAudio ? 0.3 : 1.0;
+    
+    // Find all audio and video elements
+    const audioElements = document.querySelectorAll('audio, video');
+    audioElements.forEach(element => {
+      element.volume = targetVolume;
+    });
+    
+    console.log(`✅ Set volume to ${targetVolume} for ${audioElements.length} media elements`);
+    
+    // Set up a MutationObserver to catch dynamically added media elements
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1) { // Element node
+            if (node.tagName === 'AUDIO' || node.tagName === 'VIDEO') {
+              node.volume = targetVolume;
+            }
+            // Check children
+            const mediaElements = node.querySelectorAll?.('audio, video');
+            mediaElements?.forEach(el => {
+              el.volume = targetVolume;
+            });
+          }
+        });
+      });
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+    
+    // Cleanup observer on unmount or when lowAudio changes
+    return () => {
+      observer.disconnect();
+    };
+  }, [lowAudio]);
 
   // Initialize sensory preferences when user data is loaded
   // Only update if the preferences have actually changed to avoid overwriting optimistic updates
@@ -79,6 +179,9 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
         dark_mode: prefs.dark_mode || false,
         low_audio: prefs.low_audio || false,
         reduce_animations: prefs.reduce_animations || false,
+        dyslexic_font: prefs.dyslexic_font || false,
+        bionic_reading: prefs.bionic_reading || false,
+        font_size: prefs.font_size || 'medium',
       };
       
       // Only update state if the backend preferences differ from our current ref
@@ -86,7 +189,10 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
       const prefsChanged = (
         preferencesRef.current.dark_mode !== newPrefs.dark_mode ||
         preferencesRef.current.low_audio !== newPrefs.low_audio ||
-        preferencesRef.current.reduce_animations !== newPrefs.reduce_animations
+        preferencesRef.current.reduce_animations !== newPrefs.reduce_animations ||
+        preferencesRef.current.dyslexic_font !== newPrefs.dyslexic_font ||
+        preferencesRef.current.bionic_reading !== newPrefs.bionic_reading ||
+        preferencesRef.current.font_size !== newPrefs.font_size
       );
       
       console.log('🔍 User preferences effect triggered:', {
@@ -103,6 +209,9 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
         setDarkMode(newPrefs.dark_mode);
         setLowAudio(newPrefs.low_audio);
         setReduceAnimations(newPrefs.reduce_animations);
+        setDyslexicFont(newPrefs.dyslexic_font);
+        setBionicReading(newPrefs.bionic_reading);
+        setFontSize(newPrefs.font_size);
         preferencesRef.current = newPrefs;
       }
     }
@@ -115,10 +224,16 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
       setDarkMode(false);
       setLowAudio(false);
       setReduceAnimations(false);
+      setDyslexicFont(false);
+      setBionicReading(false);
+      setFontSize('medium');
       preferencesRef.current = {
         dark_mode: false,
         low_audio: false,
         reduce_animations: false,
+        dyslexic_font: false,
+        bionic_reading: false,
+        font_size: 'medium',
       };
       setSavingStatus('idle');
       
@@ -127,9 +242,11 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
       timeoutIdsRef.current = [];
       pendingRequestsRef.current = 0;
       
-      // Ensure dark mode and reduce motion classes are removed on logout
+      // Ensure all classes are removed on logout
       document.documentElement.classList.remove('dark');
       document.documentElement.classList.remove('reduce-motion');
+      document.documentElement.classList.remove('font-dyslexic');
+      document.documentElement.classList.remove('font-small', 'font-medium', 'font-large');
     }
   }, [user]);
 
@@ -173,6 +290,24 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
         preferencesRef.current.reduce_animations = value;
         console.log(`🔄 Setting reduceAnimations state to: ${value}`);
         setReduceAnimations(value);
+        break;
+      case 'dyslexic_font':
+        previousValue = preferencesRef.current.dyslexic_font;
+        preferencesRef.current.dyslexic_font = value;
+        console.log(`🔄 Setting dyslexicFont state to: ${value}`);
+        setDyslexicFont(value);
+        break;
+      case 'bionic_reading':
+        previousValue = preferencesRef.current.bionic_reading;
+        preferencesRef.current.bionic_reading = value;
+        console.log(`🔄 Setting bionicReading state to: ${value}`);
+        setBionicReading(value);
+        break;
+      case 'font_size':
+        previousValue = preferencesRef.current.font_size;
+        preferencesRef.current.font_size = value;
+        console.log(`🔄 Setting fontSize state to: ${value}`);
+        setFontSize(value);
         break;
       default:
         console.warn(`Unknown preference: ${preference}`);
@@ -267,6 +402,15 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
           case 'reduce_animations':
             setReduceAnimations(previousValue);
             break;
+          case 'dyslexic_font':
+            setDyslexicFont(previousValue);
+            break;
+          case 'bionic_reading':
+            setBionicReading(previousValue);
+            break;
+          case 'font_size':
+            setFontSize(previousValue);
+            break;
         }
         
         // Show error feedback
@@ -297,8 +441,12 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
     darkMode,
     lowAudio,
     reduceAnimations,
+    dyslexicFont,
+    bionicReading,
+    fontSize,
     savingStatus,
     updatePreference,
+    smartTag,
   };
 
   return (

@@ -1,11 +1,21 @@
 import React from 'react';
-import { Sparkles, Moon, Volume2, Film, Loader2, Check, AlertCircle, Lightbulb, PlayCircle, CheckCircle, User } from 'lucide-react';
+import { Sparkles, Moon, Volume2, Film, Loader2, Check, AlertCircle, Lightbulb, PlayCircle, CheckCircle, User, Type, BookOpen, TextIcon } from 'lucide-react';
 import { useSensory } from '../context/SensoryContext';
 import { ProfileSummarySkeleton, CourseListSkeleton } from './Skeleton';
+import SmartText from './SmartText';
 
 // --- COMPONENT 1: SENSORY PANEL (Refactored - Stateless with Context) ---
 const SensoryPanel = () => {
-  const { darkMode, lowAudio, reduceAnimations, savingStatus, updatePreference } = useSensory();
+  const { 
+    darkMode, 
+    lowAudio, 
+    reduceAnimations,
+    dyslexicFont,
+    bionicReading,
+    fontSize,
+    savingStatus, 
+    updatePreference 
+  } = useSensory();
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm transition-colors duration-300">
       <div className="flex items-center justify-between mb-3">
@@ -72,6 +82,67 @@ const SensoryPanel = () => {
           <Film size={16} />
           <span className="text-sm font-medium">Reduce Motion</span>
         </button>
+        
+        {/* Dyslexic Font Toggle */}
+        <button 
+          onClick={() => updatePreference('dyslexic_font', !dyslexicFont)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors duration-300 ${
+            dyslexicFont 
+              ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700' 
+              : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600'
+          }`}
+        >
+          <Type size={16} />
+          <span className="text-sm font-medium">Dyslexic Font</span>
+        </button>
+        
+        {/* Bionic Reading Toggle */}
+        <button 
+          onClick={() => updatePreference('bionic_reading', !bionicReading)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors duration-300 ${
+            bionicReading 
+              ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700' 
+              : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600'
+          }`}
+        >
+          <BookOpen size={16} />
+          <span className="text-sm font-medium">Bionic Reading</span>
+        </button>
+        
+        {/* Font Size Selector */}
+        <div className="flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 transition-colors duration-300">
+          <TextIcon size={14} className="text-gray-500 dark:text-gray-400" />
+          <button
+            onClick={() => updatePreference('font_size', 'small')}
+            className={`px-2 py-1 rounded text-xs font-medium transition-colors duration-300 ${
+              fontSize === 'small'
+                ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            A
+          </button>
+          <button
+            onClick={() => updatePreference('font_size', 'medium')}
+            className={`px-2 py-1 rounded text-sm font-medium transition-colors duration-300 ${
+              fontSize === 'medium'
+                ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            A
+          </button>
+          <button
+            onClick={() => updatePreference('font_size', 'large')}
+            className={`px-2 py-1 rounded text-base font-medium transition-colors duration-300 ${
+              fontSize === 'large'
+                ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            A
+          </button>
+        </div>
       </div>
       
       {/* Helper Text for Low Audio */}
@@ -79,7 +150,17 @@ const SensoryPanel = () => {
         <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 transition-all duration-300">
           <p className="text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1">
             <Volume2 size={12} />
-            Audio is now capped at a comfortable level.
+            <SmartText>Audio is now capped at a comfortable level.</SmartText>
+          </p>
+        </div>
+      )}
+      
+      {/* Helper Text for Bionic Reading */}
+      {bionicReading && (
+        <div className="mt-3 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 transition-all duration-300">
+          <p className="text-xs text-purple-700 dark:text-purple-300 flex items-center gap-1">
+            <BookOpen size={12} />
+            <SmartText>Bionic Reading mode active - words are partially bolded for faster reading.</SmartText>
           </p>
         </div>
       )}
@@ -168,7 +249,7 @@ const LearningPath = ({ courses, isLoading }) => {
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm transition-colors duration-300">
       <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 transition-colors duration-300">
-        Your Learning Path
+        <SmartText>Your Learning Path</SmartText>
       </h2>
       
       {courses && courses.length > 0 ? (
@@ -184,24 +265,24 @@ const LearningPath = ({ courses, isLoading }) => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-800 dark:text-gray-100 transition-colors duration-300">
-                    {course.title}
+                    <SmartText>{course.title}</SmartText>
                   </h3>
                   {course.description && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">
-                      {course.description}
+                      <SmartText>{course.description}</SmartText>
                     </p>
                   )}
                 </div>
               </div>
               <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm transition-colors duration-300">
-                Continue →
+                <SmartText>Continue →</SmartText>
               </button>
             </div>
           ))}
         </div>
       ) : (
         <p className="text-gray-400 dark:text-gray-500 text-center py-8 transition-colors duration-300">
-          No courses available yet.
+          <SmartText>No courses available yet.</SmartText>
         </p>
       )}
     </div>
@@ -224,11 +305,11 @@ const StudentDashboard = ({
     }`}>
       <header className="flex justify-between items-center bg-white dark:bg-gray-800 shadow-sm rounded-xl p-4 mb-6 transition-colors duration-300">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 transition-colors duration-300">
-          NVLP Student Dashboard
+          <SmartText>NVLP Student Dashboard</SmartText>
         </h1>
         <div className="flex items-center gap-4">
           <div className="text-lg text-gray-500 dark:text-gray-400 transition-colors duration-300">
-            Welcome, {studentName}
+            <SmartText>Welcome, {studentName}</SmartText>
           </div>
           {onLogout && (
             <button
@@ -254,11 +335,11 @@ const StudentDashboard = ({
            <LearningPath courses={courses} isLoading={isLoadingCourses} />
            <div className="bg-blue-600 dark:bg-blue-700 text-white p-6 rounded-xl shadow-lg flex items-center justify-between transition-colors duration-300">
               <div>
-                <h2 className="text-xl font-bold">Ready to learn?</h2>
-                <p className="opacity-90">Resume your lesson where you left off.</p>
+                <h2 className="text-xl font-bold"><SmartText>Ready to learn?</SmartText></h2>
+                <p className="opacity-90"><SmartText>Resume your lesson where you left off.</SmartText></p>
               </div>
               <button className="bg-white dark:bg-gray-100 text-blue-600 dark:text-blue-700 px-6 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-200 transition-colors duration-300">
-                <PlayCircle size={20} /> Start
+                <PlayCircle size={20} /> <SmartText>Start</SmartText>
               </button>
            </div>
         </div>
