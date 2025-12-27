@@ -65,19 +65,32 @@ export const SensoryProvider = ({ children, user, onAuthFailure }) => {
   }, [reduceAnimations]);
 
   // Initialize sensory preferences when user data is loaded
+  // Only update if the preferences have actually changed to avoid overwriting optimistic updates
   useEffect(() => {
     if (user?.preferences) {
       const prefs = user.preferences;
-      setDarkMode(prefs.dark_mode || false);
-      setLowAudio(prefs.low_audio || false);
-      setReduceAnimations(prefs.reduce_animations || false);
-      
-      // Sync refs with loaded preferences
-      preferencesRef.current = {
+      const newPrefs = {
         dark_mode: prefs.dark_mode || false,
         low_audio: prefs.low_audio || false,
         reduce_animations: prefs.reduce_animations || false,
       };
+      
+      // Only update state if the backend preferences differ from our current ref
+      // This prevents overwriting optimistic updates while an API call is in flight
+      const prefsChanged = (
+        preferencesRef.current.dark_mode !== newPrefs.dark_mode ||
+        preferencesRef.current.low_audio !== newPrefs.low_audio ||
+        preferencesRef.current.reduce_animations !== newPrefs.reduce_animations
+      );
+      
+      // Only update if there are no pending requests AND preferences actually changed
+      if (pendingRequestsRef.current === 0 && prefsChanged) {
+        console.log('📥 Initializing preferences from user data:', newPrefs);
+        setDarkMode(newPrefs.dark_mode);
+        setLowAudio(newPrefs.low_audio);
+        setReduceAnimations(newPrefs.reduce_animations);
+        preferencesRef.current = newPrefs;
+      }
     }
   }, [user]);
 

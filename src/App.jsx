@@ -246,24 +246,24 @@ function App() {
 
   // Check authentication and fetch data on mount
   useEffect(() => {
+    let safetyTimeout;
     const initializeApp = async () => {
       console.log('🔄 Initializing app...');
       
-      // Safety timeout to prevent infinite loading (10 seconds)
-      const safetyTimeout = setTimeout(() => {
+      // Safety timeout to prevent infinite loading (8 seconds)
+      safetyTimeout = setTimeout(() => {
         console.error('⏱️ Initialization timeout - forcing exit from loading screen');
-        if (isMountedRef.current) {
-          setIsInitializing(false);
-          setIsLoadingUser(false);
-          setIsLoadingCourses(false);
-          setIsAuthenticated(false);
-          api.logout();
-          toast.error('Failed to load. Please login again.', {
-            position: 'top-center',
-            duration: 4000,
-          });
-        }
-      }, 10000); // 10 second safety timeout
+        // Force state updates without checking isMountedRef - we NEED to exit the loading screen
+        setIsInitializing(false);
+        setIsLoadingUser(false);
+        setIsLoadingCourses(false);
+        setIsAuthenticated(false);
+        api.logout();
+        toast.error('Failed to load. Please login again.', {
+          position: 'top-center',
+          duration: 4000,
+        });
+      }, 8000); // 8 second safety timeout
       
       if (api.isAuthenticated()) {
         console.log('✅ Token found, fetching user data...');
@@ -283,49 +283,53 @@ function App() {
           const userProfile = useMockDataIfNeeded(userProfileRaw, 'profile');
           const coursesData = useMockDataIfNeeded(coursesDataRaw, 'courses');
 
-          if (isMountedRef.current) {
-            setUser(userProfile);
-            setCourses(coursesData);
-            setIsAuthenticated(true);
-            console.log('✅ Initialization complete');
-          }
+          // Always update state - don't check isMountedRef to avoid getting stuck
+          setUser(userProfile);
+          setCourses(coursesData);
+          setIsAuthenticated(true);
+          console.log('✅ Initialization complete');
         } catch (err) {
           console.error('❌ Failed to fetch data:', err);
-          if (isMountedRef.current) {
-            setError(err.message);
-            setIsAuthenticated(false);
-            
-            // Show error toast - session likely expired
-            toast.error('Session expired. Please login again.', {
-              position: 'top-center',
-              duration: 4000,
-            });
-          }
+          // Always update state - don't check isMountedRef to avoid getting stuck
+          setError(err.message);
+          setIsAuthenticated(false);
+          
+          // Show error toast - session likely expired
+          toast.error('Session expired. Please login again.', {
+            position: 'top-center',
+            duration: 4000,
+          });
+          
           // Clear invalid tokens
           api.logout();
         } finally {
           // Clear the safety timeout since we completed (successfully or with error)
           clearTimeout(safetyTimeout);
           
-          if (isMountedRef.current) {
-            setIsLoadingUser(false);
-            setIsLoadingCourses(false);
-            setIsInitializing(false);
-            console.log('🏁 Initialization finished (loading states reset)');
-          }
+          // Always exit loading screen - don't check isMountedRef to avoid getting stuck
+          setIsLoadingUser(false);
+          setIsLoadingCourses(false);
+          setIsInitializing(false);
+          console.log('🏁 Initialization finished (loading states reset)');
         }
       } else {
         // Clear the safety timeout since we're showing login immediately
         clearTimeout(safetyTimeout);
         
         console.log('ℹ️ No token found, showing login screen');
-        if (isMountedRef.current) {
-          setIsInitializing(false);
-        }
+        // Always exit loading screen - don't check isMountedRef to avoid getting stuck
+        setIsInitializing(false);
       }
     };
 
     initializeApp();
+    
+    // Cleanup function to clear timeout if component unmounts
+    return () => {
+      if (safetyTimeout) {
+        clearTimeout(safetyTimeout);
+      }
+    };
   }, []);
 
   // Handle successful login
