@@ -1,19 +1,27 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast, { Toaster } from 'react-hot-toast';
 import StudentDashboard from './components/StudentDashboard';
+import LessonPlayer from './components/LessonPlayer';
 import { SensoryProvider, useSensory } from './context/SensoryContext';
 import api from './api';
 
 // Helper function to detect if backend returned API URLs instead of real data
 // and provide mock data fallback for testing
 const useMockDataIfNeeded = (data, type) => {
-  // Check if data looks like API navigation (has URL strings)
+  // Check if data looks like API navigation (has URL strings) OR is empty
   const hasUrls = data && typeof data === 'object' && 
     Object.values(data).some(val => typeof val === 'string' && val.includes('http'));
   
-  if (hasUrls) {
-    console.warn(`🔄 Backend returned API URLs instead of ${type} data. Using mock data for testing.`);
+  const isEmpty = !data || (Array.isArray(data) && data.length === 0);
+  
+  if (hasUrls || isEmpty) {
+    if (hasUrls) {
+      console.warn(`🔄 Backend returned API URLs instead of ${type} data. Using mock data for testing.`);
+    } else if (isEmpty) {
+      console.warn(`🔄 Backend returned empty ${type} data. Using mock data for testing.`);
+    }
     
     if (type === 'profile') {
       return {
@@ -64,6 +72,7 @@ const useMockDataIfNeeded = (data, type) => {
 // Login Form Component with React Hook Form
 const LoginForm = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   // Dark mode is now applied at the document level via SensoryContext
 
   const {
@@ -95,9 +104,21 @@ const LoginForm = ({ onLoginSuccess }) => {
 
       // Use mock data fallback if backend returns URLs instead of real data
       const userProfile = useMockDataIfNeeded(userProfileRaw, 'profile');
-      const coursesData = useMockDataIfNeeded(coursesDataRaw, 'courses');
+      let coursesData = useMockDataIfNeeded(coursesDataRaw, 'courses');
+      
+      // Handle paginated response from Django REST Framework
+      if (coursesData && !Array.isArray(coursesData) && coursesData.results) {
+        console.log('📦 Detected paginated response in login, extracting results array');
+        coursesData = coursesData.results;
+      }
+      
+      // If courses array is empty after all processing, use mock data
+      if (!coursesData || (Array.isArray(coursesData) && coursesData.length === 0)) {
+        console.warn('⚠️ Courses array is empty in login, using mock data');
+        coursesData = useMockDataIfNeeded(null, 'courses');
+      }
 
-      console.log('✅ Final data after mock check:', { userProfile, coursesData });
+      console.log('✅ Final data after mock check:', { userProfile, coursesData, coursesIsArray: Array.isArray(coursesData), coursesCount: coursesData?.length });
       onLoginSuccess(userProfile, coursesData);
       toast.success('Login successful!', { position: 'top-center' });
     } catch (err) {
@@ -281,7 +302,28 @@ function App() {
 
           // Use mock data fallback if backend returns URLs instead of real data
           const userProfile = useMockDataIfNeeded(userProfileRaw, 'profile');
-          const coursesData = useMockDataIfNeeded(coursesDataRaw, 'courses');
+          let coursesData = useMockDataIfNeeded(coursesDataRaw, 'courses');
+          
+          // Handle paginated response from Django REST Framework
+          if (coursesData && !Array.isArray(coursesData) && coursesData.results) {
+            console.log('📦 Detected paginated response, extracting results array');
+            coursesData = coursesData.results;
+          }
+          
+          // If courses array is empty after all processing, use mock data
+          if (!coursesData || (Array.isArray(coursesData) && coursesData.length === 0)) {
+            if (import.meta.env.DEV) {
+              console.warn('⚠️ Courses array is empty, using mock data');
+            }
+            coursesData = useMockDataIfNeeded(null, 'courses');
+          }
+          
+          console.log('📦 After mock check:', { 
+            userProfile, 
+            coursesData,
+            coursesCount: coursesData?.length || 0,
+            coursesIsArray: Array.isArray(coursesData)
+          });
 
           // Always update state - don't check isMountedRef to avoid getting stuck
           setUser(userProfile);
@@ -389,20 +431,37 @@ function App() {
   );
 }
 
-// App Content with Sensory Context
+// App Content with Sensory Context and Routes
 const AppContent = ({ user, courses, isLoadingUser, isLoadingCourses, onLogout }) => {
   // Dark mode and reduce animations are now applied at the document level via SensoryContext
   
   return (
     <>
       <Toaster />
-      <StudentDashboard 
-        user={user} 
-        courses={courses}
-        isLoadingUser={isLoadingUser}
-        isLoadingCourses={isLoadingCourses}
-        onLogout={onLogout}
-      />
+      <Routes>
+        {/* Dashboard Route */}
+        <Route 
+          path="/" 
+          element={
+            <StudentDashboard 
+              user={user} 
+              courses={courses}
+              isLoadingUser={isLoadingUser}
+              isLoadingCourses={isLoadingCourses}
+              onLogout={onLogout}
+            />
+          } 
+        />
+        
+        {/* Lesson Player Route */}
+        <Route 
+          path="/lesson/:courseId" 
+          element={<LessonPlayer onLogout={onLogout} />} 
+        />
+        
+        {/* Redirect unknown routes to dashboard */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </>
   );
 };

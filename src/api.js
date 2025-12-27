@@ -151,6 +151,145 @@ export const api = {
     return response.data;
   },
 
+  // Get specific course details
+  getCourse: async (courseId) => {
+    const response = await axiosInstance.get(`/courses/${courseId}/`);
+    return response.data;
+  },
+
+  // Lessons (mock endpoint - will use course content_metadata)
+  getLesson: async (lessonId) => {
+    // Extract course ID from lessonId (format: "lesson-{courseId}-1")
+    const courseId = lessonId.split('-')[1] || '1';
+    
+    // Different mock lessons for different courses
+    const lessons = {
+      '1': {
+        id: lessonId,
+        title: 'Introduction to Python',
+        videoUrl: 'https://www.youtube.com/watch?v=rfscVS0vtbw',
+        transcript: [
+          { time: 0, text: 'Welcome to this lesson on Python programming fundamentals.' },
+          { time: 5, text: 'Today we will explore variables, functions, and control flow in Python.' },
+          { time: 12, text: 'Let\'s start with variables. In Python, you can create variables simply by assigning values.' },
+          { time: 20, text: 'Python uses dynamic typing, so you don\'t need to declare variable types.' },
+          { time: 30, text: 'Functions in Python are defined using the def keyword.' },
+          { time: 38, text: 'Control flow in Python uses indentation instead of braces.' },
+          { time: 48, text: 'Practice is key to mastering Python. Try writing code every day!' },
+        ],
+        content: `
+# Introduction to Python
+
+## What are Variables?
+
+Variables in Python are dynamically typed. You can assign any value to a variable without declaring its type.
+
+### Key Concepts:
+- **Dynamic Typing**: No type declarations needed
+- **Assignment**: Use = to assign values
+- **Scope**: Variables are scoped to functions or modules
+
+## Functions
+
+Python functions are defined with the \`def\` keyword.
+
+### Benefits:
+- Code reusability
+- Better organization
+- Easier debugging
+
+## Practice Exercise
+
+Try creating a simple Python program that uses variables and functions to calculate the area of a rectangle.
+        `.trim(),
+        duration: 60,
+      },
+      '2': {
+        id: lessonId,
+        title: 'Web Development Basics',
+        videoUrl: 'https://www.youtube.com/watch?v=kUMe1FH4CHE',
+        transcript: [
+          { time: 0, text: 'Welcome to web development basics.' },
+          { time: 5, text: 'Today we\'ll learn about HTML, CSS, and JavaScript.' },
+          { time: 12, text: 'HTML provides the structure of a webpage.' },
+          { time: 20, text: 'CSS is used to style and layout web pages.' },
+          { time: 30, text: 'JavaScript adds interactivity to your websites.' },
+          { time: 38, text: 'Together, these three technologies form the foundation of web development.' },
+          { time: 48, text: 'Let\'s start building your first webpage!' },
+        ],
+        content: `
+# Web Development Basics
+
+## HTML - Structure
+
+HTML (HyperText Markup Language) provides the structure of your webpage.
+
+### Key Concepts:
+- **Tags**: HTML elements are created with tags
+- **Attributes**: Tags can have attributes
+- **Semantic HTML**: Use meaningful tags
+
+## CSS - Styling
+
+CSS (Cascading Style Sheets) controls the appearance of your webpage.
+
+### Benefits:
+- Separation of concerns
+- Consistent styling
+- Responsive design
+
+## JavaScript - Interactivity
+
+JavaScript makes your webpage interactive and dynamic.
+        `.trim(),
+        duration: 60,
+      },
+      '3': {
+        id: lessonId,
+        title: 'Data Structures & Algorithms',
+        videoUrl: 'https://www.youtube.com/watch?v=RBSGKlAvoiM',
+        transcript: [
+          { time: 0, text: 'Welcome to data structures and algorithms.' },
+          { time: 5, text: 'Today we\'ll explore fundamental data structures like arrays and linked lists.' },
+          { time: 12, text: 'Data structures are ways of organizing and storing data.' },
+          { time: 20, text: 'Algorithms are step-by-step procedures for solving problems.' },
+          { time: 30, text: 'Understanding time and space complexity is crucial.' },
+          { time: 38, text: 'We\'ll learn about Big O notation to analyze algorithm efficiency.' },
+          { time: 48, text: 'Let\'s dive into arrays and their operations!' },
+        ],
+        content: `
+# Data Structures & Algorithms
+
+## What are Data Structures?
+
+Data structures are ways of organizing and storing data in computer memory.
+
+### Key Concepts:
+- **Arrays**: Ordered collections of elements
+- **Linked Lists**: Dynamic data structures
+- **Trees**: Hierarchical data organization
+
+## Algorithms
+
+Algorithms are step-by-step procedures for solving problems.
+
+### Benefits:
+- Problem-solving skills
+- Efficient code
+- Better understanding of computer science
+
+## Big O Notation
+
+Big O notation describes the time and space complexity of algorithms.
+        `.trim(),
+        duration: 60,
+      },
+    };
+    
+    // Return lesson for course, or default to course 1
+    return lessons[courseId] || lessons['1'];
+  },
+
   // Task Breaker (Executive Function Toolkit)
   // Get all tasks for the authenticated user
   getTasks: async () => {

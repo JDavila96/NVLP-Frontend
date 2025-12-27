@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sparkles, Moon, Volume2, Film, Loader2, Check, AlertCircle, Lightbulb, PlayCircle, CheckCircle, User, Type, BookOpen, TextIcon } from 'lucide-react';
 import { useSensory } from '../context/SensoryContext';
 import { ProfileSummarySkeleton, CourseListSkeleton } from './Skeleton';
@@ -245,10 +246,16 @@ const SmartTags = ({ tags = [] }) => {
 
 // --- MAIN DASHBOARD ---
 const LearningPath = ({ courses, isLoading }) => {
+  const navigate = useNavigate();
+  
   // Show skeleton while loading
   if (isLoading) {
     return <CourseListSkeleton count={3} />;
   }
+
+  const handleStartLesson = (courseId) => {
+    navigate(`/lesson/${courseId}`);
+  };
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm transition-colors duration-300">
@@ -278,8 +285,12 @@ const LearningPath = ({ courses, isLoading }) => {
                   )}
                 </div>
               </div>
-              <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm transition-colors duration-300">
-                <SmartText>Continue →</SmartText>
+              <button 
+                onClick={() => handleStartLesson(course.id)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-medium text-sm transition-colors duration-300"
+              >
+                <PlayCircle size={16} />
+                <SmartText>Start Lesson</SmartText>
               </button>
             </div>
           ))}
@@ -388,3 +399,4 @@ const StudentDashboard = ({
 };
 
 export default StudentDashboard;
+// Phase 7: Neuro-Inclusive Lesson Player with React Router integrated
