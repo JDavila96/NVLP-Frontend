@@ -236,6 +236,29 @@ export const api = {
     return response.data;
   },
 
+  // Progress Tracking (Insights)
+  // Get all progress records for the authenticated user
+  getProgress: async () => {
+    const response = await axiosInstance.get('/progress/');
+    return response.data;
+  },
+
+  // Create or update progress for a course
+  updateProgress: async (courseId, data) => {
+    // data shape: { completion_rate: number, engagement_time: duration }
+    const response = await axiosInstance.post('/progress/', {
+      course: courseId,
+      ...data,
+    });
+    return response.data;
+  },
+
+  // Patch existing progress record
+  patchProgress: async (progressId, data) => {
+    const response = await axiosInstance.patch(`/progress/${progressId}/`, data);
+    return response.data;
+  },
+
   // Check if user is authenticated
   isAuthenticated: () => {
     return !!localStorage.getItem(TOKEN_KEY);

@@ -5,6 +5,7 @@ import { ProfileSummarySkeleton, CourseListSkeleton } from './Skeleton';
 import SmartText from './SmartText';
 import TaskBreaker from './TaskBreaker';
 import FocusEngine from './FocusEngine';
+import ProgressInsights from './ProgressInsights';
 import api from '../api';
 
 // --- COMPONENT 1: SENSORY PANEL (Refactored - Stateless with Context) ---
@@ -360,6 +361,9 @@ const StudentDashboard = ({
 
         {/* MAIN CONTENT */}
         <div className="lg:col-span-3 flex flex-col gap-6">
+           {/* Progress Insights - Dopamine Dashboard */}
+           <ProgressInsights tasks={tasks} user={user} />
+           
            {/* Focus Engine - Pomodoro Timer */}
            <FocusEngine tasks={tasks} />
            

@@ -142,6 +142,9 @@ const FocusEngine = ({ tasks = [] }) => {
       const newCycles = cyclesCompleted + 1;
       setCyclesCompleted(newCycles);
       
+      // Track engagement time for completed work session
+      trackEngagementTime(workDuration);
+      
       if (newCycles % cyclesToLongBreak === 0) {
         // Long break
         setMode('longBreak');
@@ -169,6 +172,27 @@ const FocusEngine = ({ tasks = [] }) => {
     
     // Sync completion to backend
     syncTimerState('idle');
+  };
+  
+  const trackEngagementTime = async (minutes) => {
+    // Store engagement time in localStorage for insights
+    try {
+      const existingTime = parseInt(localStorage.getItem('total_focus_minutes') || '0');
+      const newTotal = existingTime + minutes;
+      localStorage.setItem('total_focus_minutes', newTotal.toString());
+      
+      // Also store today's date for streak calculation
+      const today = new Date().toDateString();
+      const focusDates = JSON.parse(localStorage.getItem('focus_dates') || '[]');
+      if (!focusDates.includes(today)) {
+        focusDates.push(today);
+        localStorage.setItem('focus_dates', JSON.stringify(focusDates));
+      }
+      
+      console.log(`✅ Tracked ${minutes} focus minutes. Total: ${newTotal}`);
+    } catch (error) {
+      console.error('Failed to track engagement time:', error);
+    }
   };
   
   const handleStart = async () => {
