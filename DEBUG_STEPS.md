@@ -72,3 +72,4 @@ console.log('Found course-like divs:', coursesDivs.length);
 
 Send me the output of this!
 
+
